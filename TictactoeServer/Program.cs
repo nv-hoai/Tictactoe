@@ -1,4 +1,5 @@
-﻿var server = new TicTacToeServer.TicTacToeServer(5000);
+﻿
+var server = new TicTacToeServer.TicTacToeServer(5000);
 
 Console.CancelKeyPress += (sender, e) =>
 {

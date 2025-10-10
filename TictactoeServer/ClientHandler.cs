@@ -76,6 +76,35 @@ public class ClientHandler
 
         try
         {
+            // Allow workers to register on the same port using a JSON line
+            if (message.Length > 0 && message[0] == '{')
+            {
+                try
+                {
+                    var req = JsonSerializer.Deserialize<WorkerRequest>(message, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (req != null && string.Equals(req.RequestType, "REGISTER_WORKER", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (req.WorkerInfo != null)
+                        {
+                            server.RegisterWorker(req.WorkerInfo.Ip, req.WorkerInfo.Port, req.WorkerInfo.Role);
+                            Console.WriteLine($"Worker registered via client channel: {req.WorkerInfo.Ip}:{req.WorkerInfo.Port} role={req.WorkerInfo.Role}");
+                        }
+                        await SendMessage("WORKER_REGISTERED");
+                        // Close connection after acknowledging registration
+                        await Disconnect();
+                        return;
+                    }
+                }
+                catch
+                {
+                    // Not a worker registration payload, continue with normal client messaging
+                }
+            }
+
             if (message.StartsWith("PLAYER_INFO:"))
             {
                 await HandlePlayerInfo(message.Substring("PLAYER_INFO:".Length));
